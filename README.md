@@ -20,55 +20,42 @@ $$\text{Loss} = C_{\text{courier}} \times P(\text{RTO}) + C_{\text{friction}} \t
 
 ---
 
+
+
 ## 2. System Architecture
 
-[ CLIENT / CHECKOUT ]
-                                      │
-                        POST /api/v1/risk/evaluate-order
-                        (Header: X-Idempotency-Key)
-                                      │
-                                      ▼
-                     ┌─────────────────────────────────┐
-                     │   Idempotency & Replay Cache    │──► (Match: 0ms Replay)
-                     └─────────────────────────────────┘
-                                      │ (Miss)
-                                      ▼
-                     ┌─────────────────────────────────┐
-                     │ Anti-Evasion Normalization Hub  │
-                     │  • Canonical Token Standardizer │
-                     │  • Shannon Entropy Filter       │
-                     │  • Phonetic Soundex Clustered   │
-                     └─────────────────────────────────┘
-                                      │
-                                      ▼
-                     ┌─────────────────────────────────┐
-                     │ Calibrated LightGBM Inference   │
-                     │   + Native C++ TreeSHAP Engine  │
-                     └─────────────────────────────────┘
-                                      │
-                 ┌────────────────────┴────────────────────┐
-                 ▼                                         ▼
-       [ Risk Probability P ]                     [ SHAP Attribution ]
-                 │                                         │
-                 ▼                                         │
-   ┌───────────────────────────┐                           │
-   │   Risk Policy Engine      │                           │
-   │  • GREEN (P < 0.45)       │                           │
-   │  • AMBER (0.45 <= P < 0.9)│                           │
-   │  • RED   (P >= 0.90)      │                           │
-   └───────────────────────────┘                           │
-                 │                                         │
-                 ├───────────────────┬─────────────────────┘
-                 ▼                   ▼
-    ┌─────────────────────────┐ ┌──────────────────────────┐
-    │ Storefront Auto-Responder│ │  Async Audit Logger      │
-    │ • Green: 1-Click COD    │ │  • Background SQLite Log  │
-    │ • Amber: WhatsApp OTP   │ │  • PSI Drift Monitoring   │
-    │ • Red:   5% UPI Discount│ │                           │
-    └─────────────────────────┘ └──────────────────────────┘
+```mermaid
+flowchart TD
+    A["🛒 Client Checkout<br/><code>POST /api/v1/risk/evaluate-order</code><br/><i>Header: X-Idempotency-Key</i>"] --> B{"Idempotency Cache"}
 
+    B -- "Match (Hit)" --> C["⚡ 0ms Replay Cached Payload"]
+    
+    B -- "Miss" --> D["🛡️ Anti-Evasion Normalization Hub<br/>• Canonical Token Standardizer<br/>• Shannon Entropy Filter<br/>• Phonetic Soundex Clustered"]
+    
+    D --> E["🧠 Calibrated LightGBM Engine<br/>• Real-Time Probability Scoring<br/>• Native C++ TreeSHAP Attribution"]
+    
+    E --> F["⚖️ Risk Policy Engine<br/>Cost-Sensitive Decision Boundaries"]
+    
+    F -->|P < 0.45| G["🟢 GREEN TIER<br/>• 1-Click COD Approved<br/>• 0ms Added Friction"]
+    F -->|0.45 <= P < 0.90| H["🟡 AMBER TIER<br/>• Step-Up WhatsApp OTP Challenge<br/>• DLR Handset Telemetry"]
+    F -->|P >= 0.90| I["🔴 RED TIER<br/>• COD Disabled (Margin Protection)<br/>• Dynamic 5% Instant UPI Incentive"]
 
-    ## 3. Core Technical Defenses
+    G --> J["📝 Async Background Engine<br/>• SQLite Audit Ledger Logging<br/>• Population Stability Index (PSI) Monitoring"]
+    H --> J
+    I --> J
+
+    classDef green fill:#064e3b,stroke:#10b981,stroke-width:2px,color:#ecfdf5;
+    classDef amber fill:#78350f,stroke:#f59e0b,stroke-width:2px,color:#fffbeb;
+    classDef red fill:#7f1d1d,stroke:#ef4444,stroke-width:2px,color:#fef2f2;
+    classDef neutral fill:#0f172a,stroke:#334155,stroke-width:1.5px,color:#f8fafc;
+
+    class G green;
+    class H amber;
+    class I red;
+    class A,B,C,D,E,F,J neutral;
+   
+
+ ## 3. Core Technical Defenses
 
 1. **Adversarial Anti-Evasion:**
    * Canonicalizes localized street names (`rd` $\rightarrow$ `road`, `opp` $\rightarrow$ `opposite`).
