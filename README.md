@@ -54,6 +54,19 @@ flowchart TD
     class I red;
     class A,B,C,D,E,F,J neutral;
    ```
+
+   ### Measured Precision & Recall (Held-Out Test Set: N = 8,365)
+
+| Metric | Class 0 (Delivered) | Class 1 (RTO / Loss) | Overall / Macro |
+| :--- | :--- | :--- | :--- |
+| **Precision** | 86.0% | **75.5%** | 81.0% |
+| **Recall** | 86.0% | **74.1%** | 80.0% |
+| **F1-Score** | 0.86 | **0.75** | 0.80 |
+| **Support** | 5,357 | 3,008 | 8,365 |
+
+* **Operational Operating Threshold ($T_{\text{eval}}$):** 0.45
+* **ROC-AUC:** 0.8970 | **PR-AUC:** 0.8335
+* **Net Margin Impact:** +29.2% recovery (₹1,93,103.37 preserved)
  ## 3. Core Technical Defenses
 
 1. **Adversarial Anti-Evasion:**

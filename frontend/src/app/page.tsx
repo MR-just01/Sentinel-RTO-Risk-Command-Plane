@@ -33,7 +33,7 @@ import {
   Tooltip,
 } from "recharts";
 
-const API_BASE = "http://127.0.0.1:8000";
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://127.0.0.1:8000";
 
 const INDIAN_CITIES = [
   { city: "Bengaluru", pincode: "560001", tier: 1 },
@@ -57,31 +57,32 @@ const INDIAN_CITIES = [
 ];
 
 export default function RiskCommandCenter() {
-const [mounted, setMounted] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
-const [form, setForm] = useState({
-  order_id: "ORD_INIT",
-  user_id: "usr_checkout_live",
-  phone: "+919876543210",
-  device_id: "dev_browser_session",
-  ip_address: "106.51.55.99",
-  delivery_address: "",
-  city: "",
-  pincode: "",
-  pincode_tier: 1,
-  category: "Consumer Electronics",
-  order_value_inr: "",
-  item_count: 1,
-  payment_method: "",
-  is_first_time_user: "",
-});
+  const [form, setForm] = useState({
+    order_id: "ORD_INIT",
+    user_id: "usr_checkout_live",
+    phone: "+919876543210",
+    device_id: "dev_browser_session",
+    ip_address: "106.51.55.99",
+    delivery_address: "",
+    city: "",
+    pincode: "",
+    pincode_tier: 1,
+    category: "Consumer Electronics",
+    order_value_inr: "",
+    item_count: 1,
+    payment_method: "",
+    is_first_time_user: "",
+  });
+
   useEffect(() => {
-  setMounted(true);
-  setForm((prev) => ({
-    ...prev,
-    order_id: "ORD_" + Math.floor(100000 + Math.random() * 900000),
-  }));
-}, []);
+    setMounted(true);
+    setForm((prev) => ({
+      ...prev,
+      order_id: "ORD_" + Math.floor(100000 + Math.random() * 900000),
+    }));
+  }, []);
 
   const [loading, setLoading] = useState(false);
   const [evalResult, setEvalResult] = useState<any>(null);
@@ -127,31 +128,31 @@ const [form, setForm] = useState({
     setAddressEntropy(Number(entropy.toFixed(3)));
   }, [form.delivery_address]);
 
-   const resetAll = () => {
-  setForm({
-    order_id: "ORD_" + Math.floor(100000 + Math.random() * 900000),
-    user_id: "usr_checkout_live",
-    phone: "+919876543210",
-    device_id: "dev_browser_session",
-    ip_address: "106.51.55.99",
-    delivery_address: "",
-    city: "",
-    pincode: "",
-    pincode_tier: 1,
-    category: "Consumer Electronics",
-    order_value_inr: "",
-    item_count: 1,
-    payment_method: "",
-    is_first_time_user: "",
-  });
-  setEvalResult(null);
-  setEnteredOtp("");
-  setDeliveryStatus("IDLE");
-  setOtpSuccessMessage(null);
-  setOtpErrorMessage(null);
-  setPrepaidConverted(false);
-  setPrepaidConverting(false);
-};
+  const resetAll = () => {
+    setForm({
+      order_id: "ORD_" + Math.floor(100000 + Math.random() * 900000),
+      user_id: "usr_checkout_live",
+      phone: "+919876543210",
+      device_id: "dev_browser_session",
+      ip_address: "106.51.55.99",
+      delivery_address: "",
+      city: "",
+      pincode: "",
+      pincode_tier: 1,
+      category: "Consumer Electronics",
+      order_value_inr: "",
+      item_count: 1,
+      payment_method: "",
+      is_first_time_user: "",
+    });
+    setEvalResult(null);
+    setEnteredOtp("");
+    setDeliveryStatus("IDLE");
+    setOtpSuccessMessage(null);
+    setOtpErrorMessage(null);
+    setPrepaidConverted(false);
+    setPrepaidConverting(false);
+  };
 
   const handleCitySelect = (selectedCityName: string) => {
     const matched = INDIAN_CITIES.find((c) => c.city === selectedCityName);
@@ -227,7 +228,7 @@ const [form, setForm] = useState({
         }, 1200);
       }
     } catch (err: any) {
-      alert(`Evaluation error: ${err.message}. Confirm FastAPI is online on port 8000.`);
+      alert(`Evaluation error: ${err.message}. Confirm FastAPI is online.`);
     } finally {
       setLoading(false);
     }
@@ -283,10 +284,9 @@ const [form, setForm] = useState({
                 <h1 className="text-xl md:text-2xl font-black tracking-tight">
                   Sentinel-RTO Risk Command Plane
                 </h1>
-                
               </div>
               <p className="text-slate-400 text-xs mt-0.5">
-                E-Commerce Risk Gateway 
+                Autonomous E-Commerce &amp; COD Loss Interception Gateway
               </p>
             </div>
           </div>
@@ -309,7 +309,7 @@ const [form, setForm] = useState({
         </div>
       </header>
 
-      {/* Production Telemetry Ribbon (Shows Judges Empirical Proof) */}
+      {/* Production Telemetry Ribbon (Direct Held-Out Proof) */}
       <section className="mt-5 grid grid-cols-2 md:grid-cols-4 gap-3">
         <div className="bg-slate-900/90 border border-slate-800 p-3.5 rounded-xl flex items-center gap-3">
           <div className="p-2.5 bg-emerald-950/60 border border-emerald-800/40 rounded-lg text-emerald-400">
@@ -322,22 +322,22 @@ const [form, setForm] = useState({
         </div>
 
         <div className="bg-slate-900/90 border border-slate-800 p-3.5 rounded-xl flex items-center gap-3">
-          <div className="p-2.5 bg-indigo-950/60 border border-indigo-800/40 rounded-lg text-indigo-400">
+          <div className="p-2.5 bg-cyan-950/60 border border-cyan-800/40 rounded-lg text-cyan-400">
             <TrendingUp className="w-5 h-5" />
           </div>
           <div>
-            <p className="text-[10px] uppercase font-bold tracking-wider text-slate-400">Held-Out Calibration</p>
-            <p className="text-base font-black text-slate-100">0.897 <span className="text-xs text-indigo-400 font-normal">ROC-AUC</span></p>
+            <p className="text-[10px] uppercase font-bold tracking-wider text-slate-400">Held-Out Precision</p>
+            <p className="text-base font-black text-slate-100">75.5% <span className="text-xs text-cyan-400 font-normal">@ T=0.45</span></p>
           </div>
         </div>
 
         <div className="bg-slate-900/90 border border-slate-800 p-3.5 rounded-xl flex items-center gap-3">
-          <div className="p-2.5 bg-cyan-950/60 border border-cyan-800/40 rounded-lg text-cyan-400">
+          <div className="p-2.5 bg-indigo-950/60 border border-indigo-800/40 rounded-lg text-indigo-400">
             <Layers className="w-5 h-5" />
           </div>
           <div>
-            <p className="text-[10px] uppercase font-bold tracking-wider text-slate-400">PR-AUC Minority Class</p>
-            <p className="text-base font-black text-slate-100">0.833 <span className="text-xs text-cyan-400 font-normal">PR-AUC</span></p>
+            <p className="text-[10px] uppercase font-bold tracking-wider text-slate-400">Held-Out Recall</p>
+            <p className="text-base font-black text-slate-100">74.1% <span className="text-xs text-indigo-400 font-normal">Coverage</span></p>
           </div>
         </div>
 
@@ -362,7 +362,7 @@ const [form, setForm] = useState({
           <div>
             <div className="flex items-center justify-between pb-3 border-b border-slate-800">
               <h2 className="text-sm font-bold text-slate-200 flex items-center gap-2">
-                <Truck className="w-4 h-4 text-indigo-400" /> Ingestion & Checkout Form
+                <Truck className="w-4 h-4 text-indigo-400" /> Ingestion &amp; Checkout Form
               </h2>
               <span className="text-[10px] font-mono text-slate-400">
                 Key: key_{form.order_id}
@@ -406,7 +406,7 @@ const [form, setForm] = useState({
                 />
               </div>
 
-              {/* Anti-Evasion Telemetry Box (Proves address normalization in UI) */}
+              {/* Anti-Evasion Telemetry Box */}
               {form.delivery_address.trim().length > 0 && (
                 <div className="p-2.5 bg-slate-950/90 border border-slate-800 rounded-xl space-y-1 text-[11px] font-mono text-slate-400">
                   <p className="text-[10px] uppercase font-bold text-indigo-400 flex items-center gap-1 font-sans">
@@ -517,11 +517,11 @@ const [form, setForm] = useState({
               >
                 {loading ? (
                   <>
-                    <RefreshCw className="w-4 h-4 animate-spin" /> Ingesting & Evaluating Pipeline...
+                    <RefreshCw className="w-4 h-4 animate-spin" /> Ingesting &amp; Evaluating Pipeline...
                   </>
                 ) : (
                   <>
-                    Evaluate Risk & Execute Policy <ArrowRight className="w-4 h-4" />
+                    Evaluate Risk &amp; Execute Policy <ArrowRight className="w-4 h-4" />
                   </>
                 )}
               </button>
@@ -583,7 +583,7 @@ const [form, setForm] = useState({
                 </div>
               </div>
 
-              {/* Two Perspective Cards */}
+              {/* Diagnostic Cards */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* 1. TreeSHAP Attribution Waterfall */}
                 <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 flex flex-col justify-between">

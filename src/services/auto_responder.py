@@ -26,7 +26,7 @@ class AutoResponder:
                 "step_up_required": True,
                 "challenge_type": "WHATSAPP_OTP",
                 "masked_phone": f"{phone[:3]}******{phone[-4:]}",
-                "mock_otp_token": otp_token,
+            
                 "advance_deposit_option_inr": 49.0
             }
 
