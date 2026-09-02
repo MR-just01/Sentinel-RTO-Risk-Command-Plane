@@ -53,8 +53,7 @@ flowchart TD
     class H amber;
     class I red;
     class A,B,C,D,E,F,J neutral;
-   
-
+   ```
  ## 3. Core Technical Defenses
 
 1. **Adversarial Anti-Evasion:**
