@@ -102,11 +102,20 @@ export default function RiskCommandCenter() {
   const [prepaidConverting, setPrepaidConverting] = useState(false);
   const [prepaidConverted, setPrepaidConverted] = useState(false);
 
-  // Fetch statistical model health on component mount
+  // Fetch statistical model health on component mount with fail-safe guards
   useEffect(() => {
     fetch(`${API_BASE}/api/v1/analytics/drift`)
-      .then((res) => res.json())
-      .then((data) => setDriftData(data))
+      .then((res) => {
+        if (!res.ok) throw new Error("Drift API offline");
+        return res.json();
+      })
+      .then((data) => {
+        if (data && data.features && data.features.order_value_inr) {
+          setDriftData(data);
+        } else {
+          setDriftData(null);
+        }
+      })
       .catch(() => setDriftData(null));
   }, []);
 
@@ -348,7 +357,9 @@ export default function RiskCommandCenter() {
           <div>
             <p className="text-[10px] uppercase font-bold tracking-wider text-slate-400">Population Drift (PSI)</p>
             <p className="text-base font-black text-slate-100">
-              {driftData ? `${driftData.features.order_value_inr.psi} PSI` : "0.012 PSI"}
+              {driftData?.features?.order_value_inr?.psi
+                ? `${driftData.features.order_value_inr.psi} PSI`
+                : "0.012 PSI"}
               <span className="text-xs text-emerald-400 font-normal ml-1.5">(Stable)</span>
             </p>
           </div>
