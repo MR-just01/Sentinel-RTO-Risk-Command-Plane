@@ -3,6 +3,12 @@
 > Production-grade FinTech risk engine designed for e-commerce checkout protection, mitigating Cash-on-Delivery (COD) Return-to-Origin (RTO) courier loss through real-time ML inference, TreeSHAP attribution, and closed-loop auto-responders. Built for the **Razorpay Buildathon**.
 
 ---
+## 🚀 Live Demonstration
+* **Risk Mission Control (Frontend):**https://sentinel-risk-manager-blush.vercel.app
+* **API Documentation (FastAPI Swagger):**https://sentinel-rto-risk-command-plane.onrender.com/docs
+Live System Health Check: GET [https://sentinel-rto-risk-command-plane.onrender.com/health](https://sentinel-rto-risk-command-plane.onrender.com/health)
+
+Real-time PSI Drift Monitor: GET [https://sentinel-rto-risk-command-plane.onrender.com/api/v1/analytics/drift](https://sentinel-rto-risk-command-plane.onrender.com/api/v1/analytics/drift)
 
 ## 1. Problem Statement & Economics
 
@@ -67,6 +73,9 @@ flowchart TD
 * **Operational Operating Threshold ($T_{\text{eval}}$):** 0.45
 * **ROC-AUC:** 0.8970 | **PR-AUC:** 0.8335
 * **Net Margin Impact:** +29.2% recovery (₹1,93,103.37 preserved)
+
+```markdown
+> 📄 **Complete Test Audit Trail:** See [`Evaluation_Audit_log.md`](./Evaluation_Audit_log.md) for the complete record of test cases, raw JSON input/output rows, and latency benchmarks.
  ## 3. Core Technical Defenses
 
 1. **Adversarial Anti-Evasion:**
@@ -97,3 +106,11 @@ pip install -r requirements.txt
 
 # Start FastAPI server
 uvicorn src.services.api:app --reload --port 8000
+
+
+
+
+
+
+
+
