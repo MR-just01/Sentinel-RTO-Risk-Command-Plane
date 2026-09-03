@@ -59,6 +59,7 @@ flowchart TD
     class H amber;
     class I red;
     class A,B,C,D,E,F,J neutral;
+    ```
 
     Metric,Class 0 (Delivered),Class 1 (RTO / Loss),Overall / Macro
 Precision,86.0%,75.5%,81.0%
@@ -66,7 +67,7 @@ Recall,86.0%,74.1%,80.0%
 F1-Score,0.86,0.75,0.80
 Support,"5,357","3,008","8,365"
 
-Operational Operating Threshold ($T_{\text{eval}}$): 0.45ROC-AUC: 0.8970 | PR-AUC: 0.8335Net Margin Impact: +29.2% recovery (₹1,93,103.37 preserved)📄 Complete Test Audit Trail: See EVALUATION_AUDIT_LOG.md for the complete record of test cases, raw JSON input/output rows, and latency benchmarks.
+Operational Operating Threshold ($T_{\text{eval}}$): 0.45ROC-AUC: 0.8970 | PR-AUC: 0.8335Net Margin Impact: +29.2% recovery (₹1,93,103.37 preserved)📄 Complete Test Audit Trail: See Evaluation_Audit_log.md for the complete record of test cases, raw JSON input/output rows, and latency benchmarks.
 
 3. Core Technical DefensesAdversarial Anti-Evasion:Canonicalizes localized street names (rd $\rightarrow$ road, opp $\rightarrow$ opposite).Evaluates Shannon entropy to penalize keyboard-mashed addresses.Encodes order-independent Soundex fingerprints to prevent multi-account abuse to the same physical address.Deterministic Circuit Breaker & Idempotency:Uses X-Idempotency-Key headers to guarantee zero double-charges or duplicate model inferences on network retries.Data Drift Monitoring:Monitors live feature distributions using Population Stability Index (PSI) via /api/v1/analytics/drift to alert before model degradation occurs.
 
