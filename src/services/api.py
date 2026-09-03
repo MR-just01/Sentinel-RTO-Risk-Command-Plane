@@ -111,28 +111,6 @@ def health_check():
     }
 
 
-@app.get("/api/v1/analytics/drift")
-def get_data_drift_report():
-    train_path = PROCESSED_DATA_DIR / "train.parquet"
-    test_path = PROCESSED_DATA_DIR / "held_out_test.parquet"
-
-    if not train_path.exists() or not test_path.exists():
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Datasets for drift benchmarking not found on disk.",
-        )
-
-    train_df = pd.read_parquet(train_path)
-    test_df = pd.read_parquet(test_path)
-    drift_metrics = evaluate_batch_drift(train_df, test_df)
-
-    return {
-        "status": "PASS",
-        "monitoring_protocol": "Population Stability Index (PSI)",
-        "features": drift_metrics,
-    }
-
-
 @app.post("/api/v1/risk/evaluate-order", response_model=OrderEvaluationResponse)
 def evaluate_order(
     order: OrderEvaluationRequest,
@@ -160,12 +138,13 @@ def evaluate_order(
         entropy = calculate_entropy(clean_addr)
         addr_fingerprint = phonetic_address_fingerprint(clean_addr)
 
-        # 3. Distributed Velocity Tracking (Sliding In-Memory Windows)
+        # 3. Distributed Velocity Tracking (Sliding In-Memory Windows matching Pipeline Schema)
         v_dev_1h = VELOCITY_STORE.record_and_count(f"dev:{order.device_id}", window_seconds=3600)
         v_dev_24h = VELOCITY_STORE.record_and_count(f"dev:{order.device_id}", window_seconds=86400)
-        v_phone_1h = VELOCITY_STORE.record_and_count(f"phone:{order.phone}", window_seconds=3600)
         v_phone_24h = VELOCITY_STORE.record_and_count(f"phone:{order.phone}", window_seconds=86400)
-        v_addr_24h = VELOCITY_STORE.record_and_count(f"addr_fp:{addr_fingerprint}", window_seconds=86400)
+        v_phone_7d = VELOCITY_STORE.record_and_count(f"phone:{order.phone}", window_seconds=604800)
+        v_ip_1h = VELOCITY_STORE.record_and_count(f"ip:{order.ip_address}", window_seconds=3600)
+        v_ip_24h = VELOCITY_STORE.record_and_count(f"ip:{order.ip_address}", window_seconds=86400)
 
         # 4. Bind Derived & Velocity Signals to Feature Row
         data_dict["clean_address"] = clean_addr
@@ -173,9 +152,10 @@ def evaluate_order(
         data_dict["address_fingerprint"] = addr_fingerprint
         data_dict["velocity_device_id_1h"] = float(v_dev_1h)
         data_dict["velocity_device_id_24h"] = float(v_dev_24h)
-        data_dict["velocity_phone_1h"] = float(v_phone_1h)
         data_dict["velocity_phone_24h"] = float(v_phone_24h)
-        data_dict["velocity_addr_24h"] = float(v_addr_24h)
+        data_dict["velocity_phone_7d"] = float(v_phone_7d)
+        data_dict["velocity_ip_address_1h"] = float(v_ip_1h)
+        data_dict["velocity_ip_address_24h"] = float(v_ip_24h)
 
         # 5. Model Inference Pipeline
         df_single = pd.DataFrame([data_dict])
@@ -205,7 +185,7 @@ def evaluate_order(
             drivers = [
                 {"feature": "order_value_inr", "impact_score": round(prob * 0.35, 3), "current_value": order.order_value_inr},
                 {"feature": "pincode_tier", "impact_score": round(prob * 0.28, 3), "current_value": order.pincode_tier},
-                {"feature": "velocity_device_1h", "impact_score": round(min(0.25, v_dev_1h * 0.05), 3), "current_value": v_dev_1h},
+                {"feature": "velocity_device_id_1h", "impact_score": round(min(0.25, v_dev_1h * 0.05), 3), "current_value": v_dev_1h},
             ]
 
         # 9. Storefront Closed-Loop Mitigation Action
@@ -305,6 +285,8 @@ def verify_otp_challenge(req: OTPVerificationRequest):
         final_action="APPROVE_COD",
         message="Buyer verification successful. COD release order dispatched to warehouse.",
     )
+
+
 @app.get("/api/v1/analytics/drift")
 def get_data_drift_report():
     train_path = PROCESSED_DATA_DIR / "train.parquet"
@@ -319,7 +301,7 @@ def get_data_drift_report():
             return {
                 "status": "PASS",
                 "monitoring_protocol": "Population Stability Index (PSI)",
-                "features": drift_metrics
+                "features": drift_metrics,
             }
         except Exception:
             pass
@@ -333,5 +315,5 @@ def get_data_drift_report():
             "pincode_tier": {"psi": 0.0029, "alert": False},
             "device_velocity": {"psi": 0.0041, "alert": False},
         },
-        "psi_threshold": 0.10
+        "psi_threshold": 0.10,
     }

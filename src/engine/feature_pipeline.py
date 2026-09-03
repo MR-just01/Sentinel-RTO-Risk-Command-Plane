@@ -45,7 +45,7 @@ class RiskFeaturePipeline:
         if not self.fitted:
             raise RuntimeError("Pipeline must be fitted first.")
 
-        # Fast single-row path
+        # Fast single-row path (Used during online low-latency inference)
         if len(df) == 1:
             row = df.iloc[0]
             addr_text = str(row["delivery_address"])
@@ -80,6 +80,15 @@ class RiskFeaturePipeline:
             phone_deg = self.sentinel.graph.degree(phone_node) if self.sentinel.graph.has_node(phone_node) else 0
             is_syn = int(dev_deg >= 3 or phone_deg >= 2)
 
+            # Extract live sliding-window velocity from row if injected by API Gateway; fallback to 0.0
+            def get_val(key: str, default: float = 0.0) -> float:
+                if key in row and pd.notna(row[key]):
+                    try:
+                        return float(row[key])
+                    except (ValueError, TypeError):
+                        return default
+                return default
+
             # Construct row
             data_row = {
                 "order_value_inr": val,
@@ -107,21 +116,35 @@ class RiskFeaturePipeline:
                 "addr_vowel_ratio": v_ratio,
                 "addr_is_gibberish_flag": is_gibberish,
                 "addr_is_too_short": is_short,
-                "velocity_device_id_1h": 0.0,
-                "velocity_device_id_24h": 0.0,
-                "velocity_phone_24h": 0.0,
-                "velocity_phone_7d": 0.0,
-                "velocity_ip_address_1h": 0.0,
-                "velocity_ip_address_24h": 0.0,
+                
+                # Active velocity counters dynamically preserved
+                "velocity_device_id_1h": get_val("velocity_device_id_1h", 0.0),
+                "velocity_device_id_24h": get_val("velocity_device_id_24h", 0.0),
+                "velocity_phone_24h": get_val("velocity_phone_24h", 0.0),
+                "velocity_phone_7d": get_val("velocity_phone_7d", 0.0),
+                "velocity_ip_address_1h": get_val("velocity_ip_address_1h", 0.0),
+                "velocity_ip_address_24h": get_val("velocity_ip_address_24h", 0.0),
+                
                 "graph_device_degree": dev_deg,
                 "graph_phone_degree": phone_deg,
-                "graph_is_syndicate_cluster": is_syn
+                "graph_is_syndicate_cluster": is_syn,
             }
             return pd.DataFrame([data_row])
 
         # Batch fallback for training/validation
         addr_feats = extract_address_features(df, address_col="delivery_address")
-        vel_feats = extract_all_velocities(df)
+        
+        # Only compute batch velocity if not already present in DataFrame
+        vel_cols = [
+            "velocity_device_id_1h", "velocity_device_id_24h",
+            "velocity_phone_24h", "velocity_phone_7d",
+            "velocity_ip_address_1h", "velocity_ip_address_24h"
+        ]
+        if all(c in df.columns for c in vel_cols):
+            vel_feats = df[vel_cols].copy()
+        else:
+            vel_feats = extract_all_velocities(df)
+
         graph_feats = self.sentinel.extract_graph_signals(df)
 
         base_feats = pd.DataFrame(index=df.index)
