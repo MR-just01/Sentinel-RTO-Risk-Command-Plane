@@ -30,9 +30,11 @@ $$\text{Loss} = C_{\text{courier}} \times P(\text{RTO}) + C_{\text{friction}} \t
 
 ## 2. System Architecture
 
+## 2. System Architecture
+
 ```mermaid
 flowchart TD
-    A["🛒 Client Checkout<br/><code>POST /api/v1/risk/evaluate-order</code><br/><i>Header: X-Idempotency-Key</i>"] --> B{"Idempotency Cache"}
+    A["🛒 Client Checkout<br/>POST /api/v1/risk/evaluate-order<br/>Header: X-Idempotency-Key"] --> B{"Idempotency Cache"}
 
     B -- "Match (Hit)" --> C["⚡ 0ms Replay Cached Payload"]
     
@@ -44,9 +46,9 @@ flowchart TD
     
     F -->|P < 0.45| G["🟢 GREEN TIER<br/>• 1-Click COD Approved<br/>• 0ms Added Friction"]
     F -->|0.45 <= P < 0.90| H["🟡 AMBER TIER<br/>• Step-Up WhatsApp OTP Challenge<br/>• DLR Handset Telemetry"]
-    F -->|P >= 0.90| I["🔴 RED TIER<br/>• COD Disabled (Margin Protection)<br/>• Dynamic 5% Instant UPI Incentive"]
+    F -->|P >= 0.90| I["🔴 RED TIER<br/>• COD Disabled<br/>• Dynamic 5% Instant UPI Incentive"]
 
-    G --> J["📝 Async Background Engine<br/>• SQLite Audit Ledger Logging<br/>• Population Stability Index (PSI) Monitoring"]
+    G --> J["📝 Async Background Engine<br/>• SQLite Audit Ledger Logging<br/>• PSI Drift Monitoring"]
     H --> J
     I --> J
 
@@ -59,9 +61,11 @@ flowchart TD
     class H amber;
     class I red;
     class A,B,C,D,E,F,J neutral;
-    ```
+```
 
-    Metric,Class 0 (Delivered),Class 1 (RTO / Loss),Overall / Macro
+## 3. Core Technical Defenses
+
+Metric,Class 0 (Delivered),Class 1 (RTO / Loss),Overall / Macro
 Precision,86.0%,75.5%,81.0%
 Recall,86.0%,74.1%,80.0%
 F1-Score,0.86,0.75,0.80
