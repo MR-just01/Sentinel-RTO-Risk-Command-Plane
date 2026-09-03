@@ -26,7 +26,7 @@ class AutoResponder:
                 "step_up_required": True,
                 "challenge_type": "WHATSAPP_OTP",
                 "masked_phone": f"{phone[:3]}******{phone[-4:]}",
-            
+                "message": f"Verification code dispatched to +91******{str(phone)[-4:]}",
                 "advance_deposit_option_inr": 49.0
             }
 

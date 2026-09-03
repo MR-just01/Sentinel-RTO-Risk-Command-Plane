@@ -2,6 +2,7 @@
 Low-latency Risk Management API Gateway.
 Sub-50ms SLA, asynchronous audit logging, and dynamic policy execution.
 """
+import secrets
 import time
 from contextlib import asynccontextmanager
 from datetime import datetime
@@ -204,6 +205,8 @@ def evaluate_order(
         )
 
         if action == "VERIFY_STEP_UP_OTP":
+            # Generate the cryptographic 6-digit challenge strictly on the server
+            generated_otp = f"{secrets.randbelow(900000) + 100000}"
             ACTIVE_CHALLENGES[order.order_id] = {
                 "otp": action_payload.get("mock_otp_token"),
                 "expires_at": time.time() + 300,
