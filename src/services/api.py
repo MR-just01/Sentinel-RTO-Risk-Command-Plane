@@ -169,6 +169,13 @@ def evaluate_order(
         if entropy > 3.8 and len(clean_addr) > 20:
             prob = min(1.0, prob + 0.15)
 
+# 6. Adversarial Defense: Apply penalty for keyboard mashing
+        if entropy > 3.8 and len(clean_addr) > 20:
+            prob = min(1.0, prob + 0.15)
+
+        # If the same device or phone fires 3 or more orders in 1h, force RED escalation
+        if v_dev_1h >= 3 or v_dev_24h >= 5:
+            prob = max(prob, 0.95)
         # 7. Policy Engine Triage
         policy: RiskPolicyEngine = MODEL_STATE["policy"]
         action, tier = policy.evaluate_decision(prob)
