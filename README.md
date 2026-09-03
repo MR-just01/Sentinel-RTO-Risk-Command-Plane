@@ -74,8 +74,8 @@ flowchart TD
 * **ROC-AUC:** 0.8970 | **PR-AUC:** 0.8335
 * **Net Margin Impact:** +29.2% recovery (₹1,93,103.37 preserved)
 
-```markdown
-> 📄 **Complete Test Audit Trail:** See [`Evaluation_Audit_log.md`](./Evaluation_Audit_log.md) for the complete record of test cases, raw JSON input/output rows, and latency benchmarks.
+ 📄 Complete Test Audit Trail: See Evaluation_Audit_Log.md for the complete record of test cases, raw JSON input/output rows, and latency benchmarks.
+
  ## 3. Core Technical Defenses
 
 1. **Adversarial Anti-Evasion:**
@@ -86,7 +86,7 @@ flowchart TD
    * Uses `X-Idempotency-Key` headers to guarantee zero double-charges or duplicate model inferences on network retries.
 3. **Data Drift Monitoring:**
    * Monitors live feature distributions using Population Stability Index (PSI) via `/api/v1/analytics/drift` to alert before model degradation occurs.
-
+```
 ---
 
 ## 4. Local Quickstart
