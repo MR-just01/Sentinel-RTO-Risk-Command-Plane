@@ -23,6 +23,8 @@ import {
   FileText,
   DollarSign,
   TrendingUp,
+  ShoppingCart,
+  Fingerprint,
 } from "lucide-react";
 import {
   ResponsiveContainer,
@@ -34,6 +36,13 @@ import {
 } from "recharts";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://127.0.0.1:8000";
+
+const maskPhone = (phone?: string): string => {
+  if (!phone) return "+91 ****** ----";
+  const digits = phone.replace(/\D/g, "");
+  const last4 = digits.slice(-4) || "----";
+  return `+91 ****** ${last4}`;
+};
 
 const INDIAN_CITIES = [
   { city: "Bengaluru", pincode: "560001", tier: 1 },
@@ -56,6 +65,14 @@ const INDIAN_CITIES = [
   { city: "Agra", pincode: "282001", tier: 3 },
 ];
 
+const CATEGORIES = [
+  "Consumer Electronics",
+  "Apparel & Fashion",
+  "Beauty & Personal Care",
+  "Home & Kitchen",
+  "Books",
+];
+
 export default function RiskCommandCenter() {
   const [mounted, setMounted] = useState(false);
 
@@ -71,7 +88,7 @@ export default function RiskCommandCenter() {
     pincode_tier: 1,
     category: "Consumer Electronics",
     order_value_inr: "",
-    item_count: 1,
+    item_count: "1",
     payment_method: "",
     is_first_time_user: "",
   });
@@ -86,23 +103,20 @@ export default function RiskCommandCenter() {
 
   const [loading, setLoading] = useState(false);
   const [evalResult, setEvalResult] = useState<any>(null);
+  const [submittedOrder, setSubmittedOrder] = useState<any>(null);
   const [driftData, setDriftData] = useState<any>(null);
 
-  // Address Live Telemetry (Calculated on frontend for immediate feedback)
   const [addressEntropy, setAddressEntropy] = useState<number>(0);
 
-  // Amber Challenge States
   const [deliveryStatus, setDeliveryStatus] = useState<"IDLE" | "DISPATCHING" | "DELIVERED">("IDLE");
   const [enteredOtp, setEnteredOtp] = useState("");
   const [otpLoading, setOtpLoading] = useState(false);
   const [otpSuccessMessage, setOtpSuccessMessage] = useState<string | null>(null);
   const [otpErrorMessage, setOtpErrorMessage] = useState<string | null>(null);
 
-  // Red Conversion State
   const [prepaidConverting, setPrepaidConverting] = useState(false);
   const [prepaidConverted, setPrepaidConverted] = useState(false);
 
-  // Fetch statistical model health on component mount with fail-safe guards
   useEffect(() => {
     fetch(`${API_BASE}/api/v1/analytics/drift`)
       .then((res) => {
@@ -119,7 +133,6 @@ export default function RiskCommandCenter() {
       .catch(() => setDriftData(null));
   }, []);
 
-  // Compute live Shannon entropy as user types address
   useEffect(() => {
     const text = form.delivery_address.replace(/\s+/g, "");
     if (!text) {
@@ -150,11 +163,12 @@ export default function RiskCommandCenter() {
       pincode_tier: 1,
       category: "Consumer Electronics",
       order_value_inr: "",
-      item_count: 1,
+      item_count: "1",
       payment_method: "",
       is_first_time_user: "",
     });
     setEvalResult(null);
+    setSubmittedOrder(null);
     setEnteredOtp("");
     setDeliveryStatus("IDLE");
     setOtpSuccessMessage(null);
@@ -192,6 +206,14 @@ export default function RiskCommandCenter() {
       alert("Please enter a valid cart total.");
       return;
     }
+    if (!form.item_count || parseInt(form.item_count, 10) <= 0) {
+      alert("Please enter a valid item quantity (minimum 1).");
+      return;
+    }
+    if (!form.category) {
+      alert("Please select a product category.");
+      return;
+    }
     if (!form.payment_method) {
       alert("Please select a payment mode.");
       return;
@@ -203,6 +225,7 @@ export default function RiskCommandCenter() {
 
     setLoading(true);
     setEvalResult(null);
+    setSubmittedOrder(null);
     setEnteredOtp("");
     setOtpSuccessMessage(null);
     setOtpErrorMessage(null);
@@ -213,7 +236,10 @@ export default function RiskCommandCenter() {
     try {
       const payload = {
         ...form,
+        device_id: `dev_${Math.floor(100000 + Math.random() * 900000)}`,
+        phone: `+9198${Math.floor(10000000 + Math.random() * 90000000)}`,
         order_value_inr: parseFloat(form.order_value_inr as string),
+        item_count: parseInt(form.item_count as string, 10) || 1,
         is_first_time_user: parseInt(form.is_first_time_user as string, 10),
       };
 
@@ -229,6 +255,7 @@ export default function RiskCommandCenter() {
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
       setEvalResult(data);
+      setSubmittedOrder(payload);
 
       if (data.risk_tier === "AMBER") {
         setDeliveryStatus("DISPATCHING");
@@ -280,13 +307,13 @@ export default function RiskCommandCenter() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 p-4 md:p-8 font-sans">
+    <div className="min-h-screen bg-[#07090e] bg-[radial-gradient(ellipse_at_top,_#141b2d_0%,_#07090e_70%)] text-slate-100 p-4 md:p-8 font-sans">
       {/* Enterprise Title Bar */}
-      <header className="flex flex-col lg:flex-row justify-between items-start lg:items-center pb-5 border-b border-slate-800/80 gap-4">
+      <header className="flex flex-col lg:flex-row justify-between items-start lg:items-center pb-5 border-b border-[#1b2234] gap-4">
         <div>
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-indigo-600/20 border border-indigo-500/40 rounded-xl">
-              <ShieldCheck className="w-7 h-7 text-indigo-400" />
+            <div className="p-2 bg-gradient-to-br from-accent-700/40 to-accent-500/20 border border-accent-500/40 rounded-xl">
+              <ShieldCheck className="w-7 h-7 text-accent-400" />
             </div>
             <div>
               <div className="flex items-center gap-2">
@@ -302,11 +329,11 @@ export default function RiskCommandCenter() {
         </div>
 
         <div className="flex flex-wrap items-center gap-2.5">
-          <span className="px-3 py-1 rounded-full text-xs font-semibold bg-emerald-950/80 text-emerald-300 border border-emerald-800/80 flex items-center gap-1.5">
-            <Zap className="w-3.5 h-3.5 text-emerald-400" /> Sub-50ms SLA Target
+          <span className="px-3 py-1 rounded-full text-xs font-semibold bg-safe-950/80 text-safe-300 border border-safe-800/80 flex items-center gap-1.5">
+            <Zap className="w-3.5 h-3.5 text-safe-400" /> Sub-50ms SLA Target
           </span>
           <span className="px-3 py-1 rounded-full text-xs font-semibold bg-slate-900 text-slate-300 border border-slate-800 flex items-center gap-1.5">
-            <Binary className="w-3.5 h-3.5 text-indigo-400" /> C++ TreeSHAP Native
+            <Binary className="w-3.5 h-3.5 text-accent-400" /> C++ TreeSHAP Native
           </span>
           <button
             type="button"
@@ -320,38 +347,38 @@ export default function RiskCommandCenter() {
 
       {/* Production Telemetry Ribbon (Direct Held-Out Proof) */}
       <section className="mt-5 grid grid-cols-2 md:grid-cols-4 gap-3">
-        <div className="bg-slate-900/90 border border-slate-800 p-3.5 rounded-xl flex items-center gap-3">
-          <div className="p-2.5 bg-emerald-950/60 border border-emerald-800/40 rounded-lg text-emerald-400">
+        <div className="bg-[#0f1422]/80 backdrop-blur-md border border-[#1e293b]/70 p-3.5 rounded-xl flex items-center gap-3">
+          <div className="p-2.5 bg-safe-950/60 border border-safe-800/40 rounded-lg text-safe-400">
             <DollarSign className="w-5 h-5" />
           </div>
           <div>
             <p className="text-[10px] uppercase font-bold tracking-wider text-slate-400">Held-Out Net Margin</p>
-            <p className="text-base font-black text-slate-100">+29.2% <span className="text-xs text-emerald-400 font-normal">(₹1.93L)</span></p>
+            <p className="text-base font-black text-slate-100">+29.2% <span className="text-xs text-safe-400 font-normal">(₹1.93L)</span></p>
           </div>
         </div>
 
-        <div className="bg-slate-900/90 border border-slate-800 p-3.5 rounded-xl flex items-center gap-3">
-          <div className="p-2.5 bg-cyan-950/60 border border-cyan-800/40 rounded-lg text-cyan-400">
+        <div className="bg-[#0f1422]/80 backdrop-blur-md border border-[#1e293b]/70 p-3.5 rounded-xl flex items-center gap-3">
+          <div className="p-2.5 bg-accent-950/60 border border-accent-800/40 rounded-lg text-accent-400">
             <TrendingUp className="w-5 h-5" />
           </div>
           <div>
             <p className="text-[10px] uppercase font-bold tracking-wider text-slate-400">Held-Out Precision</p>
-            <p className="text-base font-black text-slate-100">75.5% <span className="text-xs text-cyan-400 font-normal">@ T=0.45</span></p>
+            <p className="text-base font-black text-slate-100">75.5% <span className="text-xs text-accent-400 font-normal">@ T=0.45</span></p>
           </div>
         </div>
 
-        <div className="bg-slate-900/90 border border-slate-800 p-3.5 rounded-xl flex items-center gap-3">
-          <div className="p-2.5 bg-indigo-950/60 border border-indigo-800/40 rounded-lg text-indigo-400">
+        <div className="bg-[#0f1422]/80 backdrop-blur-md border border-[#1e293b]/70 p-3.5 rounded-xl flex items-center gap-3">
+          <div className="p-2.5 bg-accent-950/60 border border-accent-800/40 rounded-lg text-accent-400">
             <Layers className="w-5 h-5" />
           </div>
           <div>
             <p className="text-[10px] uppercase font-bold tracking-wider text-slate-400">Held-Out Recall</p>
-            <p className="text-base font-black text-slate-100">74.1% <span className="text-xs text-indigo-400 font-normal">Coverage</span></p>
+            <p className="text-base font-black text-slate-100">74.1% <span className="text-xs text-accent-400 font-normal">Coverage</span></p>
           </div>
         </div>
 
-        <div className="bg-slate-900/90 border border-slate-800 p-3.5 rounded-xl flex items-center gap-3">
-          <div className="p-2.5 bg-amber-950/60 border border-amber-800/40 rounded-lg text-amber-400">
+        <div className="bg-[#0f1422]/80 backdrop-blur-md border border-[#1e293b]/70 p-3.5 rounded-xl flex items-center gap-3">
+          <div className="p-2.5 bg-caution-950/60 border border-caution-800/40 rounded-lg text-caution-400">
             <Activity className="w-5 h-5" />
           </div>
           <div>
@@ -360,7 +387,7 @@ export default function RiskCommandCenter() {
               {driftData?.features?.order_value_inr?.psi
                 ? `${driftData.features.order_value_inr.psi} PSI`
                 : "0.012 PSI"}
-              <span className="text-xs text-emerald-400 font-normal ml-1.5">(Stable)</span>
+              <span className="text-xs text-safe-400 font-normal ml-1.5">(Stable)</span>
             </p>
           </div>
         </div>
@@ -369,11 +396,11 @@ export default function RiskCommandCenter() {
       {/* Main Split Grid */}
       <div className="mt-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Left Column: Live Ingestion Console & Anti-Evasion Telemetry */}
-        <div className="lg:col-span-5 bg-slate-900/90 border border-slate-800/90 rounded-2xl p-5 flex flex-col justify-between">
+        <div className="lg:col-span-5 bg-[#0f1422]/80 backdrop-blur-md border border-[#1e293b]/80 rounded-2xl p-5 flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between pb-3 border-b border-slate-800">
               <h2 className="text-sm font-bold text-slate-200 flex items-center gap-2">
-                <Truck className="w-4 h-4 text-indigo-400" /> Ingestion &amp; Checkout Form
+                <Truck className="w-4 h-4 text-accent-400" /> Ingestion &amp; Checkout Form
               </h2>
               <span className="text-[10px] font-mono text-slate-400">
                 Key: key_{form.order_id}
@@ -387,20 +414,20 @@ export default function RiskCommandCenter() {
                   type="text"
                   disabled
                   value={form.order_id}
-                  className="w-full mt-1 bg-slate-950 border border-slate-800 rounded-lg p-2 text-slate-400 font-mono"
+                  className="w-full mt-1 bg-[#080b12] border border-[#1a2234] rounded-lg p-2 text-slate-400 font-mono"
                 />
               </div>
 
               <div>
                 <div className="flex justify-between items-center">
                   <label className="text-slate-300 font-semibold">
-                    Delivery Address <span className="text-rose-400">*</span>
+                    Delivery Address <span className="text-danger-400">*</span>
                   </label>
                   {addressEntropy > 0 && (
                     <span
                       className={`text-[10px] font-mono px-1.5 py-0.5 rounded ${
                         addressEntropy > 3.6
-                          ? "bg-rose-950 text-rose-300 border border-rose-800"
+                          ? "bg-danger-950 text-danger-300 border border-danger-800"
                           : "bg-slate-800 text-slate-300"
                       }`}
                     >
@@ -413,14 +440,14 @@ export default function RiskCommandCenter() {
                   required
                   value={form.delivery_address}
                   onChange={(e) => setForm({ ...form, delivery_address: e.target.value })}
-                  className="w-full mt-1 bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-100 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition"
+                  className="w-full mt-1 bg-[#080b12] border border-[#1a2234] rounded-lg p-2 text-slate-100 focus:border-accent-500 focus:ring-1 focus:ring-accent-500 outline-none transition"
                 />
               </div>
 
               {/* Anti-Evasion Telemetry Box */}
               {form.delivery_address.trim().length > 0 && (
-                <div className="p-2.5 bg-slate-950/90 border border-slate-800 rounded-xl space-y-1 text-[11px] font-mono text-slate-400">
-                  <p className="text-[10px] uppercase font-bold text-indigo-400 flex items-center gap-1 font-sans">
+                <div className="p-2.5 bg-[#080b12]/90 border border-[#1a2234] rounded-xl space-y-1 text-[11px] font-mono text-slate-400">
+                  <p className="text-[10px] uppercase font-bold text-accent-400 flex items-center gap-1 font-sans">
                     <Binary className="w-3 h-3" /> Anti-Evasion Pre-Processor Telemetry
                   </p>
                   <p className="truncate">
@@ -435,13 +462,13 @@ export default function RiskCommandCenter() {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="text-slate-300 font-medium flex items-center gap-1">
-                    <MapPin className="w-3 h-3 text-indigo-400" /> City
+                    <MapPin className="w-3 h-3 text-accent-400" /> City
                   </label>
                   <select
                     required
                     value={form.city}
                     onChange={(e) => handleCitySelect(e.target.value)}
-                    className="w-full mt-1 bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-100 outline-none focus:border-indigo-500"
+                    className="w-full mt-1 bg-[#080b12] border border-[#1a2234] rounded-lg p-2 text-slate-100 outline-none focus:border-accent-500 focus:ring-1 focus:ring-accent-500/30"
                   >
                     <option value="">Select City</option>
                     {INDIAN_CITIES.map((c) => (
@@ -459,7 +486,38 @@ export default function RiskCommandCenter() {
                     required
                     value={form.pincode}
                     onChange={(e) => setForm({ ...form, pincode: e.target.value })}
-                    className="w-full mt-1 bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-100 font-mono focus:border-indigo-500 outline-none"
+                    className="w-full mt-1 bg-[#080b12] border border-[#1a2234] rounded-lg p-2 text-slate-100 font-mono focus:border-accent-500 focus:ring-1 focus:ring-accent-500/30 outline-none"
+                  />
+                </div>
+              </div>
+
+              {/* Added Category & Item Count Inputs */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-slate-300 font-medium">Product Category</label>
+                  <select
+                    required
+                    value={form.category}
+                    onChange={(e) => setForm({ ...form, category: e.target.value })}
+                    className="w-full mt-1 bg-[#080b12] border border-[#1a2234] rounded-lg p-2 text-slate-100 outline-none focus:border-accent-500 focus:ring-1 focus:ring-accent-500/30"
+                  >
+                    {CATEGORIES.map((cat) => (
+                      <option key={cat} value={cat}>
+                        {cat}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-slate-300 font-medium">Item Count (Units)</label>
+                  <input
+                    type="number"
+                    required
+                    min={1}
+                    value={form.item_count}
+                    onChange={(e) => setForm({ ...form, item_count: e.target.value })}
+                    className="w-full mt-1 bg-[#080b12] border border-[#1a2234] rounded-lg p-2 text-slate-100 focus:border-accent-500 focus:ring-1 focus:ring-accent-500/30 outline-none"
                   />
                 </div>
               </div>
@@ -473,7 +531,7 @@ export default function RiskCommandCenter() {
                     min={1}
                     value={form.order_value_inr}
                     onChange={(e) => setForm({ ...form, order_value_inr: e.target.value })}
-                    className="w-full mt-1 bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-100 focus:border-indigo-500 outline-none"
+                    className="w-full mt-1 bg-[#080b12] border border-[#1a2234] rounded-lg p-2 text-slate-100 focus:border-accent-500 focus:ring-1 focus:ring-accent-500/30 outline-none"
                   />
                 </div>
 
@@ -482,7 +540,7 @@ export default function RiskCommandCenter() {
                   <select
                     value={form.pincode_tier}
                     onChange={(e) => setForm({ ...form, pincode_tier: parseInt(e.target.value, 10) })}
-                    className="w-full mt-1 bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-100 outline-none focus:border-indigo-500"
+                    className="w-full mt-1 bg-[#080b12] border border-[#1a2234] rounded-lg p-2 text-slate-100 outline-none focus:border-accent-500 focus:ring-1 focus:ring-accent-500/30"
                   >
                     <option value={1}>Tier 1 (Metro)</option>
                     <option value={2}>Tier 2 (Urban)</option>
@@ -498,7 +556,7 @@ export default function RiskCommandCenter() {
                     required
                     value={form.payment_method}
                     onChange={(e) => setForm({ ...form, payment_method: e.target.value })}
-                    className="w-full mt-1 bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-100 outline-none focus:border-indigo-500"
+                    className="w-full mt-1 bg-[#080b12] border border-[#1a2234] rounded-lg p-2 text-slate-100 outline-none focus:border-accent-500 focus:ring-1 focus:ring-accent-500/30"
                   >
                     <option value="">Select Mode</option>
                     <option value="COD">Cash on Delivery (COD)</option>
@@ -512,7 +570,7 @@ export default function RiskCommandCenter() {
                     required
                     value={form.is_first_time_user}
                     onChange={(e) => setForm({ ...form, is_first_time_user: e.target.value })}
-                    className="w-full mt-1 bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-100 outline-none focus:border-indigo-500"
+                    className="w-full mt-1 bg-[#080b12] border border-[#1a2234] rounded-lg p-2 text-slate-100 outline-none focus:border-accent-500 focus:ring-1 focus:ring-accent-500/30"
                   >
                     <option value="">Select History</option>
                     <option value="1">First-Time Buyer</option>
@@ -524,7 +582,7 @@ export default function RiskCommandCenter() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full mt-3 py-3 bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-800 font-bold rounded-xl text-white flex items-center justify-center gap-2 transition cursor-pointer"
+                className="w-full mt-3 py-3 bg-gradient-to-r from-[#22B8D9] to-[#3A5FCB] hover:from-[#35C7E6] hover:to-[#4A72D9] disabled:from-slate-800 disabled:to-slate-800 font-bold rounded-xl text-white flex items-center justify-center gap-2 shadow-md shadow-black/30 active:scale-[0.99] transition-all cursor-pointer"
               >
                 {loading ? (
                   <>
@@ -548,7 +606,7 @@ export default function RiskCommandCenter() {
         {/* Right Column: Diagnostic Triage & Production Proof Output */}
         <div className="lg:col-span-7 flex flex-col justify-center">
           {!evalResult ? (
-            <div className="h-full min-h-[460px] bg-slate-900/40 border border-dashed border-slate-800 rounded-2xl flex flex-col items-center justify-center text-center p-8">
+            <div className="h-full min-h-[460px] bg-[#0f1422]/50 backdrop-blur-sm border border-dashed border-[#1e293b]/70 rounded-2xl flex flex-col items-center justify-center text-center p-8">
               <ShieldCheck className="w-14 h-14 text-slate-700 mb-3" />
               <h3 className="text-lg font-bold text-slate-400">Awaiting Order Ingestion</h3>
               <p className="text-xs text-slate-600 max-w-md mt-1">
@@ -560,19 +618,19 @@ export default function RiskCommandCenter() {
             <div className="space-y-4">
               {/* Dynamic Status Ribbon */}
               <div
-                className={`p-5 rounded-2xl border transition-all ${
+                className={`p-5 rounded-2xl border backdrop-blur-md transition-all ${
                   evalResult.risk_tier === "GREEN"
-                    ? "bg-emerald-950/30 border-emerald-500 shadow-lg shadow-emerald-950/50"
+                    ? "bg-safe-950/30 border-safe-500"
                     : evalResult.risk_tier === "AMBER"
-                    ? "bg-amber-950/30 border-amber-500 shadow-lg shadow-amber-950/50"
-                    : "bg-rose-950/30 border-rose-500 shadow-lg shadow-rose-950/50"
+                    ? "bg-caution-950/30 border-caution-500"
+                    : "bg-danger-950/30 border-danger-500"
                 }`}
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    {evalResult.risk_tier === "GREEN" && <ShieldCheck className="w-9 h-9 text-emerald-400" />}
-                    {evalResult.risk_tier === "AMBER" && <ShieldAlert className="w-9 h-9 text-amber-400" />}
-                    {evalResult.risk_tier === "RED" && <ShieldBan className="w-9 h-9 text-rose-400" />}
+                    {evalResult.risk_tier === "GREEN" && <ShieldCheck className="w-9 h-9 text-safe-400" />}
+                    {evalResult.risk_tier === "AMBER" && <ShieldAlert className="w-9 h-9 text-caution-400" />}
+                    {evalResult.risk_tier === "RED" && <ShieldBan className="w-9 h-9 text-danger-400" />}
                     <div>
                       <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
                         Autonomous Verdict &bull; {evalResult.action}
@@ -587,9 +645,125 @@ export default function RiskCommandCenter() {
                     <p className="text-2xl font-black text-slate-100">
                       {(evalResult.risk_probability * 100).toFixed(1)}%
                     </p>
-                    <p className="text-[11px] text-emerald-400 flex items-center justify-end gap-1 font-mono">
+                    <p className="text-[11px] text-safe-400 flex items-center justify-end gap-1 font-mono">
                       <Clock className="w-3 h-3" /> {evalResult.execution_time_ms} ms (SLA Pass)
                     </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Transaction Metadata Summary */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
+                {/* Cart & Transaction Card */}
+                <div className="bg-[#0f1422]/80 backdrop-blur-md border border-[#1e293b]/70 rounded-2xl p-3.5">
+                  <h4 className="text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-2.5 flex items-center gap-1.5">
+                    <ShoppingCart className="w-3.5 h-3.5 text-accent-400" /> Cart &amp; Transaction
+                  </h4>
+                  <div className="space-y-1.5 text-xs">
+                    <div className="flex justify-between items-center gap-2">
+                      <span className="text-slate-400">Order ID</span>
+                      <span className="font-mono text-white truncate max-w-[130px]" title={submittedOrder?.order_id}>
+                        {submittedOrder?.order_id}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center gap-2">
+                      <span className="text-slate-400">Cart Value</span>
+                      <span className="text-white font-semibold">
+                        ₹{Number(submittedOrder?.order_value_inr || 0).toLocaleString("en-IN")}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center gap-2">
+                      <span className="text-slate-400">Item Count</span>
+                      <span className="text-white font-mono">{submittedOrder?.item_count} unit(s)</span>
+                    </div>
+                    <div className="flex justify-between items-center gap-2">
+                      <span className="text-slate-400">Payment Method</span>
+                      <span
+                        className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${
+                          submittedOrder?.payment_method === "COD"
+                            ? "bg-caution-950 text-caution-300 border border-caution-800"
+                            : "bg-safe-950 text-safe-300 border border-safe-800"
+                        }`}
+                      >
+                        {submittedOrder?.payment_method === "COD" ? "COD" : "Prepaid"}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center gap-2">
+                      <span className="text-slate-400">Category</span>
+                      <span className="text-white truncate max-w-[130px]" title={submittedOrder?.category}>
+                        {submittedOrder?.category}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center gap-2">
+                      <span className="text-slate-400">Buyer Status</span>
+                      <span className="text-white text-right">
+                        {submittedOrder?.is_first_time_user === 1 ? "First-Time Buyer" : "Returning Customer"}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Delivery & Geolocation Card */}
+                <div className="bg-[#0f1422]/80 backdrop-blur-md border border-[#1e293b]/70 rounded-2xl p-3.5">
+                  <h4 className="text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-2.5 flex items-center gap-1.5">
+                    <MapPin className="w-3.5 h-3.5 text-accent-400" /> Delivery &amp; Geolocation
+                  </h4>
+                  <div className="space-y-1.5 text-xs">
+                    <div>
+                      <p className="text-slate-400 text-[10px]">Delivery Address</p>
+                      <p className="text-white text-[11px] leading-snug mt-0.5 line-clamp-2">
+                        {submittedOrder?.delivery_address}
+                      </p>
+                    </div>
+                    <div className="flex justify-between items-center gap-2 pt-1">
+                      <span className="text-slate-400">City / PIN</span>
+                      <span className="font-mono text-white text-right">
+                        {submittedOrder?.city} &bull; {submittedOrder?.pincode}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center gap-2">
+                      <span className="text-slate-400">Logistics Zone</span>
+                      <span
+                        className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${
+                          submittedOrder?.pincode_tier === 1
+                            ? "bg-safe-950 text-safe-300 border border-safe-800"
+                            : submittedOrder?.pincode_tier === 2
+                            ? "bg-caution-950 text-caution-300 border border-caution-800"
+                            : "bg-danger-950 text-danger-300 border border-danger-800"
+                        }`}
+                      >
+                        Tier {submittedOrder?.pincode_tier}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Identity & Network Telemetry Card */}
+                <div className="bg-[#0f1422]/80 backdrop-blur-md border border-[#1e293b]/70 rounded-2xl p-3.5 sm:col-span-2 xl:col-span-1">
+                  <h4 className="text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-2.5 flex items-center gap-1.5">
+                    <Fingerprint className="w-3.5 h-3.5 text-accent-400" /> Identity &amp; Network Telemetry
+                  </h4>
+                  <div className="space-y-1.5 text-xs">
+                    <div className="flex justify-between items-center gap-2">
+                      <span className="text-slate-400">User ID</span>
+                      <span className="font-mono text-white truncate max-w-[140px]" title={submittedOrder?.user_id}>
+                        {submittedOrder?.user_id}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center gap-2">
+                      <span className="text-slate-400">Phone</span>
+                      <span className="font-mono text-white">{maskPhone(submittedOrder?.phone)}</span>
+                    </div>
+                    <div className="flex justify-between items-center gap-2">
+                      <span className="text-slate-400">Device ID</span>
+                      <span className="font-mono text-white truncate max-w-[140px]" title={submittedOrder?.device_id}>
+                        {submittedOrder?.device_id}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center gap-2">
+                      <span className="text-slate-400">IP Address</span>
+                      <span className="font-mono text-white">{submittedOrder?.ip_address}</span>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -597,10 +771,10 @@ export default function RiskCommandCenter() {
               {/* Diagnostic Cards */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* 1. TreeSHAP Attribution Waterfall */}
-                <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 flex flex-col justify-between">
+                <div className="bg-[#0f1422]/80 backdrop-blur-md border border-[#1e293b]/70 rounded-2xl p-4 flex flex-col justify-between">
                   <div>
                     <h4 className="text-xs font-bold text-slate-300 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                      <Binary className="w-3.5 h-3.5 text-indigo-400" /> C++ TreeSHAP Attribution
+                      <Binary className="w-3.5 h-3.5 text-accent-400" /> C++ TreeSHAP Attribution
                     </h4>
                     <div className="h-40 w-full">
                       <ResponsiveContainer width="100%" height="100%">
@@ -609,11 +783,11 @@ export default function RiskCommandCenter() {
                           data={evalResult.risk_drivers}
                           margin={{ left: 10, right: 15, top: 5, bottom: 5 }}
                         >
-                          <XAxis type="number" stroke="#64748B" fontSize={10} />
+                          <XAxis type="number" stroke="#334155" fontSize={10} />
                           <YAxis
                             dataKey="feature"
                             type="category"
-                            stroke="#94A3B8"
+                            stroke="#334155"
                             fontSize={9}
                             width={95}
                           />
@@ -621,14 +795,28 @@ export default function RiskCommandCenter() {
                             contentStyle={{ backgroundColor: "#0F172A", borderColor: "#334155" }}
                             formatter={(val: any) => [`+${val}`, "Risk Impact"]}
                           />
+                          <defs>
+                            <linearGradient id="barGradientSafe" x1="0" y1="0" x2="1" y2="0">
+                              <stop offset="0%" stopColor="#10b981" />
+                              <stop offset="100%" stopColor="#059669" />
+                            </linearGradient>
+                            <linearGradient id="barGradientCaution" x1="0" y1="0" x2="1" y2="0">
+                              <stop offset="0%" stopColor="#e0a83d" />
+                              <stop offset="100%" stopColor="#b8862a" />
+                            </linearGradient>
+                            <linearGradient id="barGradientDanger" x1="0" y1="0" x2="1" y2="0">
+                              <stop offset="0%" stopColor="#f43f5e" />
+                              <stop offset="100%" stopColor="#e11d48" />
+                            </linearGradient>
+                          </defs>
                           <Bar
                             dataKey="impact_score"
                             fill={
                               evalResult.risk_tier === "GREEN"
-                                ? "#10B981"
+                                ? "url(#barGradientSafe)"
                                 : evalResult.risk_tier === "AMBER"
-                                ? "#F59E0B"
-                                : "#EF4444"
+                                ? "url(#barGradientCaution)"
+                                : "url(#barGradientDanger)"
                             }
                             radius={[0, 4, 4, 0]}
                           />
@@ -642,17 +830,17 @@ export default function RiskCommandCenter() {
                 </div>
 
                 {/* 2. Storefront Auto-Responder */}
-                <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 flex flex-col justify-between">
+                <div className="bg-[#0f1422]/80 backdrop-blur-md border border-[#1e293b]/70 rounded-2xl p-4 flex flex-col justify-between">
                   <div>
                     <h4 className="text-xs font-bold text-slate-300 uppercase tracking-wider mb-2.5 flex items-center gap-1.5">
-                      <Layers className="w-3.5 h-3.5 text-indigo-400" /> Autonomous Action Plane
+                      <Layers className="w-3.5 h-3.5 text-accent-400" /> Autonomous Action Plane
                     </h4>
 
                     {/* GREEN */}
                     {evalResult.risk_tier === "GREEN" && (
                       <div className="space-y-3">
-                        <div className="p-3 bg-emerald-950/40 border border-emerald-800/60 rounded-xl">
-                          <p className="text-xs font-bold text-emerald-400 uppercase flex items-center gap-1">
+                        <div className="p-3 bg-safe-950/40 border border-safe-800/60 rounded-xl">
+                          <p className="text-xs font-bold text-safe-400 uppercase flex items-center gap-1">
                             <CheckCircle2 className="w-4 h-4" /> 1-Click COD Approved
                           </p>
                           <p className="text-[11px] text-slate-300 mt-1">
@@ -670,33 +858,33 @@ export default function RiskCommandCenter() {
                     {/* AMBER */}
                     {evalResult.risk_tier === "AMBER" && (
                       <div className="space-y-2.5">
-                        <div className="p-2.5 bg-amber-950/40 border border-amber-800/60 rounded-xl space-y-1.5">
+                        <div className="p-2.5 bg-caution-950/40 border border-caution-800/60 rounded-xl space-y-1.5">
                           <div className="flex justify-between items-center text-xs">
-                            <span className="font-bold text-amber-400 flex items-center gap-1">
+                            <span className="font-bold text-caution-400 flex items-center gap-1">
                               <MessageSquare className="w-3 h-3" /> WhatsApp Telemetry
                             </span>
                             <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${
                               deliveryStatus === "DELIVERED"
-                                ? "bg-emerald-950 text-emerald-400 border border-emerald-800"
-                                : "bg-amber-950 text-amber-300 animate-pulse"
+                                ? "bg-safe-950 text-safe-400 border border-safe-800"
+                                : "bg-caution-950 text-caution-300 animate-pulse"
                             }`}>
                               {deliveryStatus === "DELIVERED" ? "DELIVERED_TO_HANDSET" : "TRANSMITTING..."}
                             </span>
                           </div>
 
-                          <div className="bg-slate-950 p-2 rounded border border-slate-800 flex items-start gap-1.5">
-                            <Smartphone className="w-3.5 h-3.5 text-emerald-400 shrink-0 mt-0.5" />
+                          <div className="bg-[#080b12] p-2 rounded border border-[#1a2234] flex items-start gap-1.5">
+                            <Smartphone className="w-3.5 h-3.5 text-safe-400 shrink-0 mt-0.5" />
                             <div className="text-[10px] text-slate-300">
                               <p className="text-slate-400">
-                                Sentinel Code: <span className="font-mono font-bold text-slate-100 bg-slate-800 px-1 rounded">{evalResult.action_payload?.mock_otp_token}</span>
+                                Sentinel Code: <span className="font-mono font-bold text-accent-300 bg-[#1a2234] px-1 rounded">{evalResult.action_payload?.mock_otp_token}</span>
                               </p>
                             </div>
                           </div>
                         </div>
 
                         {otpSuccessMessage ? (
-                          <div className="p-2.5 bg-emerald-950/80 border border-emerald-700 rounded-xl text-xs text-emerald-300 flex items-center gap-2">
-                            <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                          <div className="p-2.5 bg-safe-950/80 border border-safe-700 rounded-xl text-xs text-safe-300 flex items-center gap-2">
+                            <CheckCircle2 className="w-4 h-4 text-safe-400 shrink-0" />
                             {otpSuccessMessage}
                           </div>
                         ) : (
@@ -707,19 +895,19 @@ export default function RiskCommandCenter() {
                                 maxLength={6}
                                 value={enteredOtp}
                                 onChange={(e) => setEnteredOtp(e.target.value)}
-                                className="w-full bg-slate-950 border border-slate-700 rounded-lg p-1.5 text-center text-xs font-mono tracking-widest text-slate-100 focus:border-amber-500 outline-none"
+                                className="w-full bg-[#080b12] border border-[#1a2234] rounded-lg p-1.5 text-center text-xs font-mono tracking-widest text-slate-100 focus:border-caution-500 outline-none"
                               />
                               <button
                                 type="button"
                                 onClick={handleManualVerifyOtp}
                                 disabled={otpLoading || enteredOtp.length !== 6}
-                                className="px-3 py-1.5 bg-amber-600 hover:bg-amber-500 disabled:bg-slate-800 text-xs font-bold rounded-lg text-white shrink-0 cursor-pointer"
+                                className="px-3 py-1.5 bg-caution-600 hover:bg-caution-500 disabled:bg-slate-800 text-xs font-bold rounded-lg text-white shrink-0 cursor-pointer"
                               >
                                 {otpLoading ? "Checking..." : "Verify"}
                               </button>
                             </div>
                             {otpErrorMessage && (
-                              <p className="text-[10px] text-rose-400">{otpErrorMessage}</p>
+                              <p className="text-[10px] text-danger-400">{otpErrorMessage}</p>
                             )}
                           </div>
                         )}
@@ -729,8 +917,8 @@ export default function RiskCommandCenter() {
                     {/* RED */}
                     {evalResult.risk_tier === "RED" && (
                       <div className="space-y-2.5">
-                        <div className="p-2.5 bg-rose-950/40 border border-rose-800/60 rounded-xl">
-                          <p className="text-xs font-bold text-rose-400 uppercase flex items-center gap-1">
+                        <div className="p-2.5 bg-danger-950/40 border border-danger-800/60 rounded-xl">
+                          <p className="text-xs font-bold text-danger-400 uppercase flex items-center gap-1">
                             <ShieldBan className="w-3.5 h-3.5" /> COD Disabled &bull; High Risk
                           </p>
                           <p className="text-[10px] text-slate-300 mt-0.5">
@@ -738,18 +926,18 @@ export default function RiskCommandCenter() {
                           </p>
                         </div>
 
-                        <div className="bg-slate-950 p-2.5 rounded-xl border border-slate-800 text-xs">
+                        <div className="bg-gradient-to-br from-accent-950/30 via-[#0f1422]/70 to-accent-800/20 p-2.5 rounded-xl border border-accent-500/30 text-xs">
                           <div className="flex justify-between text-slate-400 text-[11px]">
                             <span>Original Total:</span>
                             <span className="line-through">₹{form.order_value_inr}</span>
                           </div>
-                          <div className="flex justify-between text-emerald-400 text-[11px] mt-0.5 font-semibold">
+                          <div className="flex justify-between text-safe-400 text-[11px] mt-0.5 font-semibold">
                             <span>5% UPI Conversion:</span>
                             <span>-₹{evalResult.action_payload?.incentive_offer?.discount_applied_inr || 150}</span>
                           </div>
                           <div className="flex justify-between font-bold text-slate-100 mt-1.5 pt-1.5 border-t border-slate-800 text-xs">
                             <span>Payable:</span>
-                            <span className="text-emerald-400">
+                            <span className="text-safe-400">
                               ₹{evalResult.action_payload?.incentive_offer?.final_payable_inr || Number(form.order_value_inr) - 150}
                             </span>
                           </div>
@@ -758,7 +946,7 @@ export default function RiskCommandCenter() {
                             type="button"
                             onClick={handleSimulateUpiPayment}
                             disabled={prepaidConverted || prepaidConverting}
-                            className="w-full mt-2 py-2 bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-800 font-bold rounded-lg text-xs text-white flex items-center justify-center gap-1.5 transition cursor-pointer"
+                            className="w-full mt-2 py-2 bg-safe-600 hover:bg-safe-500 disabled:bg-slate-800 font-bold rounded-lg text-xs text-white flex items-center justify-center gap-1.5 transition cursor-pointer"
                           >
                             {prepaidConverting ? (
                               <>
@@ -766,7 +954,7 @@ export default function RiskCommandCenter() {
                               </>
                             ) : prepaidConverted ? (
                               <>
-                                <CheckCircle2 className="w-3 h-3 text-emerald-300" /> Payment Converted
+                                <CheckCircle2 className="w-3 h-3 text-safe-300" /> Payment Converted
                               </>
                             ) : (
                               <>
@@ -785,14 +973,14 @@ export default function RiskCommandCenter() {
                 </div>
               </div>
 
-              {/* Bottom Proof Drawer: Audit & Idempotency Logs */}
-              <div className="bg-slate-900/90 border border-slate-800 rounded-xl p-3 flex items-center justify-between text-[11px] font-mono text-slate-400">
+              {/* Bottom Proof Drawer */}
+              <div className="bg-[#0f1422]/80 backdrop-blur-md border border-[#1e293b]/70 rounded-xl p-3 flex items-center justify-between text-[11px] font-mono text-slate-400">
                 <div className="flex items-center gap-2">
-                  <FileText className="w-3.5 h-3.5 text-indigo-400" />
+                  <FileText className="w-3.5 h-3.5 text-accent-400" />
                   <span>SQLite Ledger Record: <strong>#{evalResult.order_id}</strong></span>
                 </div>
                 <div className="flex items-center gap-3">
-                  <span className="text-emerald-400">&bull; Idempotency Replay Ready (120s TTL)</span>
+                  <span className="text-safe-400">&bull; Idempotency Replay Ready (120s TTL)</span>
                   <span className="text-slate-500">&bull; Async Audit Persisted</span>
                 </div>
               </div>
