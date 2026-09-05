@@ -2,7 +2,6 @@
 Low-latency Risk Management API Gateway.
 Sub-50ms SLA, asynchronous audit logging, and dynamic policy execution.
 """
-import secrets
 import time
 from contextlib import asynccontextmanager
 from datetime import datetime
@@ -170,13 +169,10 @@ def evaluate_order(
         if entropy > 3.8 and len(clean_addr) > 20:
             prob = min(1.0, prob + 0.15)
 
-# 6. Adversarial Defense: Apply penalty for keyboard mashing
-        if entropy > 3.8 and len(clean_addr) > 20:
-            prob = min(1.0, prob + 0.15)
-
         # If the same device or phone fires 3 or more orders in 1h, force RED escalation
         if v_dev_1h >= 3 or v_dev_24h >= 5:
             prob = max(prob, 0.95)
+
         # 7. Policy Engine Triage
         policy: RiskPolicyEngine = MODEL_STATE["policy"]
         action, tier = policy.evaluate_decision(prob)
@@ -205,8 +201,6 @@ def evaluate_order(
         )
 
         if action == "VERIFY_STEP_UP_OTP":
-            # Generate the cryptographic 6-digit challenge strictly on the server
-            generated_otp = f"{secrets.randbelow(900000) + 100000}"
             ACTIVE_CHALLENGES[order.order_id] = {
                 "otp": action_payload.get("mock_otp_token"),
                 "expires_at": time.time() + 300,

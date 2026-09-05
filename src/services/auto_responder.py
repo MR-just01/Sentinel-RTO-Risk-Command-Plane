@@ -2,7 +2,7 @@
 Autonomous Action Dispatcher.
 Constructs dynamic intervention payloads for checkout gateways.
 """
-import uuid
+import secrets
 
 
 class AutoResponder:
@@ -19,14 +19,15 @@ class AutoResponder:
             }
 
         elif action == "VERIFY_STEP_UP_OTP":
-            otp_token = str(uuid.uuid4().int)[:6]
+            # Cryptographically generated 6-digit challenge (server-side only).
+            otp_token = f"{secrets.randbelow(900000) + 100000}"
             return {
                 "status": "CHALLENGE_REQUIRED",
-                "message": "Step-up OTP verification dispatched to buyer WhatsApp/SMS.",
+                "message": f"Verification code dispatched to +91******{str(phone)[-4:]}",
                 "step_up_required": True,
                 "challenge_type": "WHATSAPP_OTP",
                 "masked_phone": f"{phone[:3]}******{phone[-4:]}",
-                "message": f"Verification code dispatched to +91******{str(phone)[-4:]}",
+                "mock_otp_token": otp_token,
                 "advance_deposit_option_inr": 49.0
             }
 
