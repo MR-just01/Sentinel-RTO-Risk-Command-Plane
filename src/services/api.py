@@ -115,12 +115,7 @@ def health_check():
 @app.post("/api/v1/risk/reset-velocity")
 def reset_velocity():
     """Flushes sliding window counters for testing/demo runs."""
-    if hasattr(VELOCITY_STORE, "clear"):
-        VELOCITY_STORE.clear()
-    elif hasattr(VELOCITY_STORE, "_store"):
-        VELOCITY_STORE._store.clear()
-    elif hasattr(VELOCITY_STORE, "store"):
-        VELOCITY_STORE.store.clear()
+    VELOCITY_STORE.clear()
     return {"status": "success", "message": "Velocity sliding windows cleared."}
 
 
@@ -151,13 +146,24 @@ def evaluate_order(
         entropy = calculate_entropy(clean_addr)
         addr_fingerprint = phonetic_address_fingerprint(clean_addr)
 
-        # 3. Distributed Velocity Tracking (Sliding In-Memory Windows matching Pipeline Schema)
-        v_dev_1h = VELOCITY_STORE.record_and_count(f"dev:{order.device_id}", window_seconds=3600)
-        v_dev_24h = VELOCITY_STORE.record_and_count(f"dev:{order.device_id}", window_seconds=86400)
-        v_phone_24h = VELOCITY_STORE.record_and_count(f"phone:{order.phone}", window_seconds=86400)
-        v_phone_7d = VELOCITY_STORE.record_and_count(f"phone:{order.phone}", window_seconds=604800)
-        v_ip_1h = VELOCITY_STORE.record_and_count(f"ip:{order.ip_address}", window_seconds=3600)
-        v_ip_24h = VELOCITY_STORE.record_and_count(f"ip:{order.ip_address}", window_seconds=86400)
+        # 3. Distributed Velocity Tracking (Sliding In-Memory Windows).
+        # IMPORTANT: count() is read-only; record() is called exactly once per
+        # entity per request, after all window counts are read for that entity.
+        # (Calling record_and_count() once per window would double-count events.)
+        dev_key = f"dev:{order.device_id}"
+        v_dev_1h = VELOCITY_STORE.count(dev_key, window_seconds=3600)
+        v_dev_24h = VELOCITY_STORE.count(dev_key, window_seconds=86400)
+        VELOCITY_STORE.record(dev_key)
+
+        phone_key = f"phone:{order.phone}"
+        v_phone_24h = VELOCITY_STORE.count(phone_key, window_seconds=86400)
+        v_phone_7d = VELOCITY_STORE.count(phone_key, window_seconds=604800)
+        VELOCITY_STORE.record(phone_key)
+
+        ip_key = f"ip:{order.ip_address}"
+        v_ip_1h = VELOCITY_STORE.count(ip_key, window_seconds=3600)
+        v_ip_24h = VELOCITY_STORE.count(ip_key, window_seconds=86400)
+        VELOCITY_STORE.record(ip_key)
 
         # 4. Bind Derived & Velocity Signals to Feature Row
         data_dict["clean_address"] = clean_addr
